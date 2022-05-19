@@ -53,13 +53,9 @@ ReconnectResultsAndFailures = Tuple[
 class Server:
     """Flower server."""
 
-    def __init__(
-        self, client_manager: ClientManager, strategy: Optional[Strategy] = None
-    ) -> None:
+    def __init__(self, client_manager: ClientManager, strategy: Optional[Strategy] = None) -> None:
         self._client_manager: ClientManager = client_manager
-        self.parameters: Parameters = Parameters(
-            tensors=[], tensor_type="numpy.ndarray"
-        )
+        self.parameters: Parameters = Parameters(tensors=[], tensor_type="numpy.ndarray")
         self.strategy: Strategy = strategy if strategy is not None else FedAvg()
         self.max_workers: Optional[int] = None
 
@@ -128,9 +124,7 @@ class Server:
                 loss_fed, evaluate_metrics_fed, _ = res_fed
                 if loss_fed:
                     history.add_loss_distributed(rnd=current_round, loss=loss_fed)
-                    history.add_metrics_distributed(
-                        rnd=current_round, metrics=evaluate_metrics_fed
-                    )
+                    history.add_metrics_distributed(rnd=current_round, metrics=evaluate_metrics_fed)
 
         # Bookkeeping
         end_time = timeit.default_timer()
@@ -140,9 +134,7 @@ class Server:
 
     def evaluate_round(
         self, rnd: int
-    ) -> Optional[
-        Tuple[Optional[float], Dict[str, Scalar], EvaluateResultsAndFailures]
-    ]:
+    ) -> Optional[Tuple[Optional[float], Dict[str, Scalar], EvaluateResultsAndFailures]]:
         """Validate current global model on a number of clients."""
 
         # Get clients and their respective instructions from strategy
@@ -182,9 +174,7 @@ class Server:
 
     def fit_round(
         self, rnd: int
-    ) -> Optional[
-        Tuple[Optional[Parameters], Dict[str, Scalar], FitResultsAndFailures]
-    ]:
+    ) -> Optional[Tuple[Optional[Parameters], Dict[str, Scalar], FitResultsAndFailures]]:
         """Perform a single round of federated averaging."""
 
         # Get clients and their respective instructions from strategy
@@ -281,9 +271,7 @@ def reconnect_clients(
     return results, failures
 
 
-def reconnect_client(
-    client: ClientProxy, reconnect: Reconnect
-) -> Tuple[ClientProxy, Disconnect]:
+def reconnect_client(client: ClientProxy, reconnect: Reconnect) -> Tuple[ClientProxy, Disconnect]:
     """Instruct client to disconnect and (optionally) reconnect later."""
     disconnect = client.reconnect(reconnect)
     return client, disconnect
@@ -316,6 +304,10 @@ def fit_clients(
             result = future.result()
             results.append(result)
     return results, failures
+
+
+def fit_clients_async():
+    """TODO"""
 
 
 def fit_client(client: ClientProxy, ins: FitIns) -> Tuple[ClientProxy, FitRes]:
@@ -353,9 +345,7 @@ def evaluate_clients(
     return results, failures
 
 
-def evaluate_client(
-    client: ClientProxy, ins: EvaluateIns
-) -> Tuple[ClientProxy, EvaluateRes]:
+def evaluate_client(client: ClientProxy, ins: EvaluateIns) -> Tuple[ClientProxy, EvaluateRes]:
     """Evaluate parameters on a single client."""
     evaluate_res = client.evaluate(ins)
     return client, evaluate_res
