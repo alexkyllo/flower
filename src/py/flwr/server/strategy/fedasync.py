@@ -14,6 +14,7 @@ from flwr.common import (
 )
 from flwr.common.typing import FitRes, Weights
 from flwr.server.client_proxy import ClientProxy
+from py.flwr.server.client_manager import ClientManager
 
 from .fedavg import FedAvg
 
@@ -35,6 +36,12 @@ def update_global_from_local(
 class FedAsync(FedAvg):
     """An asynchronous version of Federated Averaging that updates the global
     model upon each client update."""
+
+    def configure_fit(
+        self, rnd: int, parameters: Parameters, client_manager: ClientManager
+    ) -> List[Tuple[ClientProxy, FitIns]]:
+        """TODO: save the global model parameters for update."""
+        return super().configure_fit(rnd, parameters, client_manager)
 
     def aggregate_fit(
         self, rnd: int, results: List[Tuple[ClientProxy, FitRes]], failures: List[BaseException]
