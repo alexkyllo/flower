@@ -306,10 +306,6 @@ def fit_clients(
     return results, failures
 
 
-def fit_clients_async():
-    """TODO"""
-
-
 def fit_client(client: ClientProxy, ins: FitIns) -> Tuple[ClientProxy, FitRes]:
     """Refine parameters on a single client."""
     fit_res = client.fit(ins)
