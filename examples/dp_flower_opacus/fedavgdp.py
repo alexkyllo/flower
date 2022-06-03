@@ -70,7 +70,7 @@ class FedAvgDp(FedAvg):
             initial_parameters,
         )
 
-        # This variable is used to track maximum possible value of ε - privacy budget
+        # This variable is used to track maximum value of ε - privacy budget consumed so far.
         self.max_epsilon = 0.0
 
     def aggregate_fit(
