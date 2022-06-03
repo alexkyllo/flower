@@ -1,6 +1,9 @@
 """Differentially Private Federated Averaging Strategy.
 
 Author: Pooja Nadagouda
+
+This class is adapted from:
+https://github.com/matturche/flower_opacus_example/blob/main/flower_helpers.py 
 """
 
 from typing import Callable, Dict, List, Optional, Tuple
@@ -40,7 +43,6 @@ class FedAvgDp(FedAvg):
         Initial global model parameters.
     """
 
-    # pylint: disable=too-many-arguments,too-many-instance-attributes
     def __init__(
         self,
         fraction_fit: float = 0.1,
@@ -68,7 +70,7 @@ class FedAvgDp(FedAvg):
             initial_parameters,
         )
 
-        # Keep track of the maximum possible privacy budget
+        # This variable is used to track maximum possible value of ε - privacy budget
         self.max_epsilon = 0.0
 
     def aggregate_fit(
@@ -106,26 +108,29 @@ class FedAvgDp(FedAvg):
             parameters, the updates received in this round are discarded, and
             the global model parameters remain the same.
         """
+        # If results is empty then return None
         if not results:
             return None
 
-        # Get the privacy budget of each client
+        # From the results fetch the value of ε - privacy budget for each client.
         accepted_results = []
-        epsilons = []
+        epsilon_values = []
         for client, result in results:
-            # Check if client can be accepted or not
+            # Check each client's accept flag so we can filter out clients who exceeded max ε.
             if result.metrics["accept"]:
                 accepted_results.append([client, result])
-                epsilons.append(result.metrics["epsilon"])
+                epsilon_values.append(result.metrics["epsilon"])
             else:
-                # Disconnect any client whose privacy budget was exceeded.
+                # If any of the client's privacy budget (ε) is exceeded it is disconnected.
                 server.reconnect_client(client, server.Reconnect(None))
 
+        # Now the results contain only results of client's whose ε is within boundary
         results = accepted_results
-        if epsilons:
-            self.max_epsilon = max(self.max_epsilon, max(epsilons))
-
+        # Log the highest ε value among all accepted clients for the user's info.
+        # This indicates how much of the privacy budget remains for subsequent training.
+        if epsilon_values:
+            self.max_epsilon = max(self.max_epsilon, max(epsilon_values))
         logger.info("Privacy budget ε at round {}: {:.3f}", rnd, self.max_epsilon)
 
-        # Call aggregate_evaluate from base class (FedAvg)
+        # Invoke aggregate fit logic of the parent class (FedAvg) on selected clients' results
         return super().aggregate_fit(rnd, results, failures)
