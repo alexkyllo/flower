@@ -29,7 +29,7 @@ def get_args() -> Namespace:
     )
     parser.add_argument("--batch-size", default=32, type=int, help="Batch size")
     parser.add_argument(
-        "--learning-rate", default=0.01, type=float, help="Learning rate for training"
+        "--learning-rate", default=0.01, type=float, help="Learning rate for training."
     )
     parser.add_argument(
         "--eps",
@@ -37,9 +37,9 @@ def get_args() -> Namespace:
         default=1.0,
         help="Target epsilon for the privacy budget.",
     )
-    parser.add_argument("--max-grad-norm", default=1.0, type=float, help="Gradient clipping norm")
+    parser.add_argument("--max-grad-norm", default=1.0, type=float, help="Gradient clipping norm.")
     parser.add_argument(
-        "--rounds", type=int, default=3, help="Number of rounds for the federated training."
+        "--rounds", type=int, default=3, help="Number of rounds of federated training to run."
     )
     parser.add_argument(
         "--device", type=str, default="cpu", help="Which client device to run training on."

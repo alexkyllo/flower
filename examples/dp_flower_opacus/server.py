@@ -5,30 +5,31 @@ Author: Alex Kyllo
 from argparse import ArgumentParser, Namespace
 from functools import partial
 
-from main import Net, evaluate, get_weights, load_data, start_server
+from dp_client import get_weights
+from main import Net, evaluate, load_data, start_server
 from torch.nn import CrossEntropyLoss
 
 import flwr as fl
 
 
 def get_server_args() -> Namespace:
-    """Get command line args for the server."""
+    """Get command line arguments for the server."""
     parser = ArgumentParser(description="Flower Server for DP demo.")
     parser.add_argument("--batch-size", default=32, type=int, help="Batch size")
     parser.add_argument(
-        "--rounds", type=int, default=3, help="Number of rounds for the federated training"
+        "--rounds", type=int, default=3, help="Number of rounds of federated training to run."
     )
     parser.add_argument(
         "--min_fit_clients",
         type=int,
         default=2,
-        help="Min fit clients, min number of clients to be sampled next round",
+        help="Minimum number of clients to sample per round.",
     )
     parser.add_argument(
         "--available_clients",
         type=int,
         default=2,
-        help="Min available clients, min number of clients that need to connect to the server before training round can start",
+        help="Minimum number of clients that must connect to the server before training round can start.",
     )
     return parser.parse_args()
 

@@ -128,9 +128,7 @@ class DPClient(NumPyClient):
         parameters: List[numpy.ndarray]
             The desired local model parameters as a list of NumPy ndarrays.
         """
-        params_dict = zip(self.module.state_dict().keys(), parameters)
-        state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-        self.module.load_state_dict(state_dict, strict=True)
+        set_weights(self.module, parameters)
 
     def get_parameters(self) -> List[np.ndarray]:
         """Return the current local model parameters.
@@ -140,7 +138,7 @@ class DPClient(NumPyClient):
         parameters : List[numpy.ndarray]
             The local model parameters as a list of NumPy ndarrays.
         """
-        return [param.cpu().numpy() for _, param in self.module.state_dict().items()]
+        return get_weights(self.module)
 
     def fit(
         self, parameters: List[np.ndarray], config: Dict[str, Scalar]
@@ -171,11 +169,13 @@ class DPClient(NumPyClient):
         self.set_parameters(parameters)
         self.config = config
         metrics = {}
+        # Each epoch is a loop over all examples in the training dataset.
         for e in range(self.epochs):
             predictions = []
             actuals = []
             logger.info("Client {} starting training epoch # {}", self.cid, e)
             train_loader = tqdm(self.train_loader) if self.use_tqdm else self.train_loader
+            # Loop over each example in the training dataset
             for x_train, y_train in train_loader:
                 num = y_train.size(0)
                 if num > 0:
@@ -190,11 +190,12 @@ class DPClient(NumPyClient):
                     actuals.extend(y_train)
             predictions = torch.stack(predictions, 0)
             actuals = torch.stack(actuals, 0)
+            # Compute any metric functions provided by user code.
             for name, fun in self.metric_functions.items():
                 metrics[name] = fun(predictions, actuals)
+        # Determine how much of the privacy budget has been consumed.
         epsilon = self.privacy_engine.get_epsilon(self.target_delta)
         accept = epsilon <= self.target_epsilon
-        # metrics = {name: f(outputs, y_train) for name, f in self.metric_functions.items()}
         metrics["epsilon"] = epsilon
         metrics["accept"] = accept
         logger.info("Client {} epsilon: {:.3f}", self.cid, epsilon)
@@ -248,6 +249,19 @@ class DPClient(NumPyClient):
         )
         logger.info("Client {} metrics: {}", self.cid, results[2])
         return results
+
+
+def get_weights(model):
+    """Convert PyTorch module parameters to a numpy array."""
+    return [val.cpu().numpy() for _, val in model.state_dict().items()]
+
+
+def set_weights(module: Module, parameters: List[np.ndarray]) -> None:
+    """Set the PyTorch module parameters from a list of NumPy arrays."""
+    params_dict = zip(module.state_dict().keys(), parameters)
+    state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
+    module.load_state_dict(state_dict, strict=True)
+    return module
 
 
 def test(

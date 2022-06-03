@@ -12,7 +12,7 @@ from typing import Callable, List
 import numpy as np
 import torch
 import torch.nn as nn
-from dp_client import DPClient, test
+from dp_client import DPClient, get_weights, set_weights, test
 from fedavgdp import FedAvgDp
 from loguru import logger
 from opacus import PrivacyEngine
@@ -29,7 +29,10 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class Net(nn.Module):
-    """An example convolutional neural network for fitting the CIFAR-10 dataset."""
+    """An example convolutional neural network for fitting the CIFAR-10 image classification benchmark dataset.
+    From the Flower PyTorch Quickstart example at:
+    https://github.com/adap/flower/blob/e37d959392ea43bae88aa37fee3cf3ae4bb5e2f7/examples/quickstart_pytorch/client.py#L22
+    """
 
     def __init__(self) -> None:
         super(Net, self).__init__()
@@ -67,19 +70,6 @@ def load_data(batch_size: int, num_clients: int = 1, cid: int = 0):
     return DataLoader(
         train_subset, batch_size=batch_size, shuffle=True, drop_last=True
     ), DataLoader(test_subset, batch_size=batch_size)
-
-
-def get_weights(model):
-    """Convert PyTorch module parameters to a numpy array."""
-    return [val.cpu().numpy() for _, val in model.state_dict().items()]
-
-
-def set_weights(module: nn.Module, parameters: List[np.ndarray]) -> None:
-    """Set the PyTorch module parameters from a list of NumPy arrays."""
-    params_dict = zip(module.state_dict().keys(), parameters)
-    state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-    module.load_state_dict(state_dict, strict=True)
-    return module
 
 
 def accuracy(predictions, actuals):
@@ -187,15 +177,15 @@ def get_args() -> argparse.Namespace:
         "--num-clients",
         default=2,
         type=int,
-        help="Total number of clients",
+        help="Total number of clients.",
     )
     parser.add_argument(
         "--epochs",
         default=2,
         type=int,
-        help="Total number of local epochs to train",
+        help="Number of local epochs to train per round.",
     )
-    parser.add_argument("--batch-size", default=32, type=int, help="Batch size")
+    parser.add_argument("--batch-size", default=32, type=int, help="Training data batch size.")
     parser.add_argument(
         "--learning-rate", default=0.01, type=float, help="Learning rate for training"
     )
@@ -208,19 +198,19 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("--max-grad-norm", default=1.0, type=float, help="Gradient clipping norm")
 
     parser.add_argument(
-        "--rounds", type=int, default=3, help="Number of rounds for the federated training"
+        "--rounds", type=int, default=3, help="Number of rounds of federated training to run."
     )
     parser.add_argument(
         "--min_fit_clients",
         type=int,
         default=2,
-        help="Min fit clients, min number of clients to be sampled next round",
+        help="Minimum number of clients to sample per round.",
     )
     parser.add_argument(
         "--available_clients",
         type=int,
         default=2,
-        help="Min available clients, min number of clients that need to connect to the server before training round can start",
+        help="Minimum number of clients that need to connect to the server before training round can start.",
     )
     parser.add_argument(
         "--tqdm",
@@ -232,6 +222,7 @@ def get_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+    # Read command line arguments
     args = get_args()
     epochs = int(args.epochs)
     num_clients = int(args.num_clients)
@@ -243,13 +234,13 @@ if __name__ == "__main__":
     max_grad_norm = float(args.max_grad_norm)
     learning_rate = float(args.learning_rate)
     use_tqdm = bool(args.tqdm)
-    # Set the start method for multiprocessing in case Python version is under 3.8.1
-    mp.set_start_method("spawn")
-    # Create a new fresh model to initialize parameters
+
+    # Construct and initialize a new PyTorch model
     net = Net()
     init_weights = get_weights(net)
-    # Convert the weights (np.ndarray) to parameters
     init_param = fl.common.weights_to_parameters(init_weights)
+
+    # Start up the server and client subprocesses
     _, test_loader = load_data(batch_size)
     eval_fn = partial(evaluate, net, CrossEntropyLoss(), test_loader, "cpu")
     server_process = start_server(init_param, min_fit_clients, available_clients, rounds, eval_fn)
