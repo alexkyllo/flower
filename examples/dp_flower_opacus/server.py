@@ -43,7 +43,7 @@ if __name__ == "__main__":
     net = Net()
     init_weights = get_weights(net)
     # Convert the weights (np.ndarray) to parameters
-    init_param = fl.common.weights_to_parameters(init_weights)
+    init_param = fl.common.ndarrays_to_parameters(init_weights)
     _, test_loader = load_data(batch_size)
     eval_fn = partial(evaluate, net, CrossEntropyLoss(), test_loader, "cpu")
     server_process = start_server(init_param, min_fit_clients, available_clients, rounds, eval_fn)

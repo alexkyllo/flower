@@ -81,6 +81,7 @@ def accuracy(predictions, actuals):
 
 # Main function to create DP client
 def start_client(
+    cid: int,
     batch_size: int,
     epochs: int,
     rounds: int,
@@ -90,7 +91,6 @@ def start_client(
     max_grad_norm: float,
     learning_rate: float,
     use_tqdm: bool,
-    cid: int,
 ) -> None:
     """Start a client."""
     module = Net()
@@ -121,7 +121,7 @@ def start_client(
         accuracy=accuracy,
     )
     logger.info("Starting client # {}", cid)
-    fl.client.start_numpy_client("[::]:8080", client=client)
+    fl.client.start_numpy_client(server_address="[::]:8080", client=client)
 
 
 def evaluate(
@@ -152,19 +152,22 @@ def evaluate(
     return float(loss), {"accuracy": float(acc)}
 
 
-def start_server(init_param: Parameters, fc: int, ac: int, rounds: int, eval_fn: Callable):
+def start_server(init_param: Parameters, fc: int, ac: int, rounds: int, evaluate_fn: Callable):
     """Start the Flower server with the differential privacy strategy."""
     strategy = FedAvgDp(
         fraction_fit=float(fc / ac),
         min_fit_clients=fc,
         min_available_clients=ac,
-        eval_fn=eval_fn,
+        evaluate_fn=evaluate_fn,
         initial_parameters=init_param,
     )
     server_process = mp.Process(
         target=fl.server.start_server,
-        args=["[::]:8080"],
-        kwargs=dict(config={"num_rounds": rounds}, strategy=strategy),
+        kwargs=dict(
+            server_address="[::]:8080",
+            config=fl.server.ServerConfig(num_rounds=rounds),
+            strategy=strategy,
+        ),
     )
     server_process.start()
     return server_process
@@ -238,23 +241,29 @@ if __name__ == "__main__":
     # Construct and initialize a new PyTorch model
     net = Net()
     init_weights = get_weights(net)
-    init_param = fl.common.weights_to_parameters(init_weights)
+    init_param = fl.common.ndarrays_to_parameters(init_weights)
 
     # Start up the server and client subprocesses
     _, test_loader = load_data(batch_size)
     eval_fn = partial(evaluate, net, CrossEntropyLoss(), test_loader, "cpu")
-    server_process = start_server(init_param, min_fit_clients, available_clients, rounds, eval_fn)
+    server_process = start_server(
+        init_param=init_param,
+        fc=min_fit_clients,
+        ac=available_clients,
+        rounds=rounds,
+        evaluate_fn=eval_fn,
+    )
     client_fn = partial(
         start_client,
-        batch_size,
-        epochs,
-        rounds,
-        num_clients,
-        "cpu",
-        target_epsilon,
-        max_grad_norm,
-        learning_rate,
-        use_tqdm,
+        batch_size=batch_size,
+        epochs=epochs,
+        rounds=rounds,
+        num_clients=num_clients,
+        device="cpu",
+        target_epsilon=target_epsilon,
+        max_grad_norm=max_grad_norm,
+        learning_rate=learning_rate,
+        use_tqdm=use_tqdm,
     )
     with mp.Pool(num_clients) as pool:
         pool.map(client_fn, range(num_clients))
