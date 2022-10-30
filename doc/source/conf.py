@@ -24,7 +24,7 @@ from sphinx.application import ConfigError
 
 
 # Fixing path issue for autodoc
-sys.path.insert(0, os.path.abspath('../../src/py'))
+sys.path.insert(0, os.path.abspath("../../src/py"))
 
 
 # -- Project information -----------------------------------------------------
@@ -34,7 +34,7 @@ copyright = u"2022 Adap GmbH"
 author = u"The Flower Authors"
 
 # The full version, including alpha/beta/rc tags
-release = u"1.0.0"
+release = u"1.1.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -48,10 +48,12 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.graphviz",
+    "myst_parser",
     "sphinx_copybutton",
-    "sphinx_panels",
+    "sphinx_design",
     "sphinxcontrib.mermaid",
-    "sphinx_reredirects"
+    "sphinx_reredirects",
+    "nbsphinx",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -65,6 +67,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # Sphinx redirects, implemented after the doc filename changes.
 # To prevent 404 errors and redirect to the new pages.
 redirects = {
+    # Renamed pages
     "quickstart_mxnet": "quickstart-mxnet.html",
     "quickstart_pytorch_lightning": "quickstart-pytorch-lightning.html",
     "example_walkthrough_pytorch_mnist": "example-walkthrough-pytorch-mnist.html",
@@ -72,7 +75,11 @@ redirects = {
     "quickstart_pytorch": "quickstart-pytorch.html",
     "quickstart_tensorflow": "quickstart-tensorflow.html",
     "release_process": "release-process.html",
-    "quickstart_scikitlearn": "quickstart-scikitlearn.html"
+    "quickstart_scikitlearn": "quickstart-scikitlearn.html",
+    # Deleted pages
+    "people": "index.html",
+    "organizations": "index.html",
+    "publications": "index.html",
 }
 
 
@@ -113,3 +120,26 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
+
+# -- Options for nbsphinx -------------------------------------------------
+
+nbsphinx_execute = 'never'
+
+_open_in_colab_button = """
+.. raw:: html
+
+    <br/>
+    <a href="https://colab.research.google.com/github/adap/flower/blob/main/doc/source/{{ env.doc2path(env.docname, base=None) }}">
+        <img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"/>
+    </a>
+"""
+nbsphinx_prolog = _open_in_colab_button
+nbsphinx_epilog = _open_in_colab_button
+
+# -- Options for sphinxcontrib-mermaid -------------------------------------
+# Don't load it automatically through the extension as we are loading it through the
+# theme (see base.html) as the inclusion of require.js by the extension `nbsphinx`
+# breaks the way mermaid is loaded. The solution is to load mermaid before the
+# require.js script added by `nbsphinx`. We can only enforce this in the theme
+# itself.
+mermaid_version = ""

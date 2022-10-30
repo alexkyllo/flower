@@ -21,7 +21,7 @@ class CifarClient(fl.client.NumPyClient):
         """Get properties of client."""
         raise Exception("Not implemented")
 
-    def get_parameters(self):
+    def get_parameters(self, config):
         """Get parameters of the local model."""
         raise Exception("Not implemented (server-side parameter initialization)")
 
@@ -89,7 +89,7 @@ def main() -> None:
     client = CifarClient(model, x_train, y_train, x_test, y_test)
 
     fl.client.start_numpy_client(
-        server_address="localhost:8080",
+        server_address="127.0.0.1:8080",
         client=client,
         root_certificates=Path(".cache/certificates/ca.crt").read_bytes(),
     )

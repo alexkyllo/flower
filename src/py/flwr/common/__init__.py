@@ -15,13 +15,15 @@
 """Flower utilities shared between server and client."""
 
 
+from .grpc import GRPC_MAX_MESSAGE_LENGTH
 from .parameter import bytes_to_ndarray as bytes_to_ndarray
 from .parameter import ndarray_to_bytes as ndarray_to_bytes
-from .parameter import parameters_to_weights as parameters_to_weights
-from .parameter import weights_to_parameters as weights_to_parameters
+from .parameter import ndarrays_to_parameters as ndarrays_to_parameters
+from .parameter import parameters_to_ndarrays as parameters_to_ndarrays
+from .typing import ClientMessage as ClientMessage
 from .typing import Code as Code
 from .typing import Config as Config
-from .typing import Disconnect as Disconnect
+from .typing import DisconnectRes as DisconnectRes
 from .typing import EvaluateIns as EvaluateIns
 from .typing import EvaluateRes as EvaluateRes
 from .typing import FitIns as FitIns
@@ -32,20 +34,21 @@ from .typing import GetPropertiesIns as GetPropertiesIns
 from .typing import GetPropertiesRes as GetPropertiesRes
 from .typing import Metrics as Metrics
 from .typing import MetricsAggregationFn as MetricsAggregationFn
+from .typing import NDArray as NDArray
+from .typing import NDArrays as NDArrays
 from .typing import Parameters as Parameters
 from .typing import Properties as Properties
-from .typing import Reconnect as Reconnect
+from .typing import ReconnectIns as ReconnectIns
 from .typing import Scalar as Scalar
+from .typing import ServerMessage as ServerMessage
 from .typing import Status as Status
-from .typing import Weights as Weights
-
-GRPC_MAX_MESSAGE_LENGTH: int = 536_870_912  # == 512 * 1024 * 1024
 
 __all__ = [
     "bytes_to_ndarray",
+    "ClientMessage",
     "Code",
     "Config",
-    "Disconnect",
+    "DisconnectRes",
     "EvaluateIns",
     "EvaluateRes",
     "FitIns",
@@ -58,12 +61,14 @@ __all__ = [
     "Metrics",
     "MetricsAggregationFn",
     "ndarray_to_bytes",
+    "NDArray",
+    "NDArrays",
+    "ndarrays_to_parameters",
     "Parameters",
-    "parameters_to_weights",
+    "parameters_to_ndarrays",
     "Properties",
-    "Reconnect",
+    "ReconnectIns",
     "Scalar",
+    "ServerMessage",
     "Status",
-    "Weights",
-    "weights_to_parameters",
 ]

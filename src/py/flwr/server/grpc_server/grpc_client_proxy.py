@@ -77,7 +77,7 @@ class GrpcClientProxy(ClientProxy):
         ins: common.FitIns,
         timeout: Optional[float],
     ) -> common.FitRes:
-        """Refine the provided weights using the locally held dataset."""
+        """Refine the provided parameters using the locally held dataset."""
         fit_ins_msg = serde.fit_ins_to_proto(ins)
 
         res_wrapper: ResWrapper = self.bridge.request(
@@ -95,7 +95,7 @@ class GrpcClientProxy(ClientProxy):
         ins: common.EvaluateIns,
         timeout: Optional[float],
     ) -> common.EvaluateRes:
-        """Evaluate the provided weights using the locally held dataset."""
+        """Evaluate the provided parameters using the locally held dataset."""
         evaluate_msg = serde.evaluate_ins_to_proto(ins)
         res_wrapper: ResWrapper = self.bridge.request(
             ins_wrapper=InsWrapper(
@@ -109,17 +109,17 @@ class GrpcClientProxy(ClientProxy):
 
     def reconnect(
         self,
-        reconnect: common.Reconnect,
+        ins: common.ReconnectIns,
         timeout: Optional[float],
-    ) -> common.Disconnect:
+    ) -> common.DisconnectRes:
         """Disconnect and (optionally) reconnect later."""
-        reconnect_msg = serde.reconnect_to_proto(reconnect)
+        reconnect_ins_msg = serde.reconnect_ins_to_proto(ins)
         res_wrapper: ResWrapper = self.bridge.request(
             ins_wrapper=InsWrapper(
-                server_message=ServerMessage(reconnect=reconnect_msg),
+                server_message=ServerMessage(reconnect_ins=reconnect_ins_msg),
                 timeout=timeout,
             )
         )
         client_msg: ClientMessage = res_wrapper.client_message
-        disconnect = serde.disconnect_from_proto(client_msg.disconnect)
+        disconnect = serde.disconnect_res_from_proto(client_msg.disconnect_res)
         return disconnect
